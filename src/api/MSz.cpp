@@ -21,11 +21,13 @@
 #include <random>
 #include <cstdio>
 
-#ifdef ENABLE_ZSTD
+#include "MSz_config.h"
+
+#if MSZ_ENABLE_ZSTD
     #include <zstd.h>
 #endif
 
-#ifdef OPENMP_ENABLED
+#if MSZ_ENABLE_OPENMP
     #include <omp.h>
     #include "MSz_omp.h"
 #endif
@@ -33,7 +35,7 @@
 #include "MSz_serial.h"
 #include "MSz_globals.h"
 
-#ifdef CUDA_ENABLED
+#if MSZ_ENABLE_CUDA
     #include "device_launch_parameters.h"
     #include "cuda_runtime.h"
     #include "cublas_v2.h"
@@ -116,7 +118,7 @@ int MSz_derive_edits(
     int status = MSZ_ERR_NO_ERROR;
 
     if (accelerator == MSZ_ACCELERATOR_CUDA) {
-        #ifdef CUDA_ENABLED
+        #if MSZ_ENABLE_CUDA
                 status = fix_process(dev_a, dev_b, dev_c, dev_d, dev_e, dev_f, dev_m, dev_q,
                                     W, H, D, bound, preserve_min, preserve_max, preserve_path, connectivity_type,
                                     device_id);
@@ -125,7 +127,7 @@ int MSz_derive_edits(
         #endif
     } 
     else if (accelerator == MSZ_ACCELERATOR_OMP) {
-        #ifdef OPENMP_ENABLED
+        #if MSZ_ENABLE_OPENMP
                 if (num_omp_threads <= 0) {
                     return MSZ_ERR_INVALID_THREAD_COUNT;
                 }
@@ -238,7 +240,7 @@ int MSz_count_faults(
     int status = MSZ_ERR_NOT_IMPLEMENTED;
 
     if (accelerator == MSZ_ACCELERATOR_CUDA) {
-        #ifdef CUDA_ENABLED
+        #if MSZ_ENABLE_CUDA
                 status = count_false_cases(
                     dev_a, dev_b, dev_c, dev_d, dev_e, dev_f, dev_m, dev_q,
                     W, H, D, connectivity_type,
@@ -249,7 +251,7 @@ int MSz_count_faults(
                 return MSZ_ERR_NOT_IMPLEMENTED;
         #endif
     } else if (accelerator == MSZ_ACCELERATOR_OMP) {
-        #ifdef OPENMP_ENABLED
+        #if MSZ_ENABLE_OPENMP
                 if (num_omp_threads <= 0) {
                     return MSZ_ERR_INVALID_THREAD_COUNT;
                 }
@@ -285,7 +287,7 @@ int MSz_compress_edits_zstd(
     char **compressed_buffer,
     size_t &compressed_size) {
 
-    #ifndef ENABLE_ZSTD
+    #if !MSZ_ENABLE_ZSTD
         return MSZ_ERR_NOT_IMPLEMENTED; // Zstd disabled
     #else
 
@@ -371,7 +373,7 @@ int MSz_decompress_edits_zstd(
     int &num_edits,
     MSz_edit_t **edits) {
 
-    #ifndef ENABLE_ZSTD
+    #if !MSZ_ENABLE_ZSTD
         return MSZ_ERR_NOT_IMPLEMENTED; // Zstd disabled
     #else
         if (compressed_buffer == nullptr || compressed_size == 0 || edits == nullptr) {
@@ -469,7 +471,7 @@ int MSz_apply_edits(
         }
     }
     else if (accelerator == MSZ_ACCELERATOR_OMP) {
-        #ifdef OPENMP_ENABLED
+        #if MSZ_ENABLE_OPENMP
 
         #pragma omp parallel for num_threads(num_omp_threads)
         for (int i = 0; i < num_edits; ++i) {
@@ -483,7 +485,7 @@ int MSz_apply_edits(
         #endif
     }
     else if (accelerator == MSZ_ACCELERATOR_CUDA) {
-        #ifdef CUDA_ENABLED
+        #if MSZ_ENABLE_CUDA
             return 0;
         #else
             return MSZ_ERR_NOT_IMPLEMENTED;
